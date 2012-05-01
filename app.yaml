@@ -1,0 +1,14 @@
+application: email2httppost
+version: 1
+runtime: python27
+api_version: 1
+threadsafe: true
+
+handlers:
+- url: /_ah/mail/.+
+  script: email2httppost.app
+
+inbound_services:
+- mail
+
+
