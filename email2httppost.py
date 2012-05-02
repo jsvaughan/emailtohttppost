@@ -7,8 +7,7 @@ import os
 
 class PostToUrl(InboundMailHandler):
     def receive(self, mail_message):
-        logging.info("Received a message from: " + mail_message.sender)
-        body = mail_message.bodies('text/plain').next()[1].decode()
+        body =  ''.join([body.decode() for content_type, body in mail_message.bodies(content_type='text/plain')])
         form_fields = {
             "title": mail_message.subject,
             "body": body,
@@ -16,7 +15,7 @@ class PostToUrl(InboundMailHandler):
         }
         form_data = urllib.urlencode(form_fields)
 
-        result = urlfetch.fetch(url=os.environ.get('DESTINATION_URL'),
+        urlfetch.fetch(url=os.environ.get('DESTINATION_URL'),
             payload=form_data,
             method=urlfetch.POST,
             headers={'Content-Type': 'application/x-www-form-urlencoded'})
