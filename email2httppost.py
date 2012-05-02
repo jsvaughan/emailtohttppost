@@ -4,21 +4,35 @@ from google.appengine.ext import webapp
 from google.appengine.ext.webapp.mail_handlers import InboundMailHandler
 from google.appengine.ext.webapp.util import run_wsgi_app
 import os
+from poster.encode import MultipartParam, multipart_encode
 
 class PostToUrl(InboundMailHandler):
     def receive(self, mail_message):
+        params = [MultipartParam('email', value=mail_message.sender), MultipartParam('title', value=mail_message.subject)]
+
         body =  ''.join([body.decode() for content_type, body in mail_message.bodies(content_type='text/plain')])
-        form_fields = {
-            "title": mail_message.subject,
-            "body": body,
-            "email": mail_message.sender
-        }
-        form_data = urllib.urlencode(form_fields)
+        params.append(MultipartParam('body', value=body))
 
-        urlfetch.fetch(url=os.environ.get('DESTINATION_URL'),
-            payload=form_data,
+        if hasattr(mail_message, 'attachments') and mail_message.attachments:
+            attachments = mail_message.attachments
+            # Only process the first
+            name, content = attachments[0]
+            params.append(MultipartParam(
+                "image",
+                filename=name,
+                value=content.decode()))
+
+        payloadgen, headers = multipart_encode(params)
+        payload = str().join(payloadgen)
+
+        result = urlfetch.fetch(
+            url=os.environ.get('DESTINATION_URL'),
+            payload=payload,
             method=urlfetch.POST,
-            headers={'Content-Type': 'application/x-www-form-urlencoded'})
+            headers=headers,
+            deadline=60)
 
+        self.response.out.write('HTTP RESPONSE STATUS: %s<br />' % result.status_code)
+        self.response.out.write(result.content)
 
 app = webapp.WSGIApplication([PostToUrl.mapping()], debug=True)
