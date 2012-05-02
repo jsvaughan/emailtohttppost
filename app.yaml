@@ -11,4 +11,7 @@ handlers:
 inbound_services:
 - mail
 
+env_variables:
+  DESTINATION_URL: 'http://where.to.send.it''
+
 
