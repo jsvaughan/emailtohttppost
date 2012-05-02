@@ -14,11 +14,10 @@ class PostToUrl(InboundMailHandler):
         params.append(MultipartParam('body', value=body))
 
         if hasattr(mail_message, 'attachments') and mail_message.attachments:
-            attachments = mail_message.attachments
             # Only process the first
-            name, content = attachments[0]
+            name, content = mail_message.attachments[0]
             params.append(MultipartParam(
-                "image",
+                'picture',
                 filename=name,
                 value=content.decode()))
 
