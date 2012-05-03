@@ -9,10 +9,10 @@ What it does
 -------------------------
 Any email sent to {string}@{appid}.appspotmail.com becomes a multipart post to a url you specify, with the fields:
 
-email = the sender's email address
-title = the email subject lne
-body = the email body
-image = the first attachment, if present
+ * email = the sender's email address
+ * title = the email subject lne
+ * body = the email body
+ * image = the first attachment, if present
 
 How to use it
 -------------------------
