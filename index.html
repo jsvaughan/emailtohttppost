@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>(emailtohttppost) email -&gt; HTTP POST by jsvaughan</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/pygment_trac.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>(emailtohttppost) email -&gt; HTTP POST</h1>
+        <p>An appengine app that receives email and sends the email content via http post</p>
+        <p class="view"><a href="https://github.com/jsvaughan/emailtohttppost">View the Project on GitHub <small>jsvaughan/emailtohttppost</small></a></p>
+        <ul>
+          <li><a href="https://github.com/jsvaughan/emailtohttppost/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/jsvaughan/emailtohttppost/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/jsvaughan/emailtohttppost">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>emailtohttppost</h1>
+
+<p>An appengine app that receives email and sends the email content via http post</p>
+
+<p>e.g. a free alternative to <a href="http://mailnuggets.com">http://mailnuggets.com</a>, <a href="http://cloudmailin.com">http://cloudmailin.com</a> etc</p>
+
+<h2>What it does</h2>
+
+<p>Any email sent to {string}@{appid}.appspotmail.com becomes a multipart post to a url you specify, with the fields:</p>
+
+<ul>
+<li>email = the sender's email address</li>
+<li>title = the email subject lne</li>
+<li>body = the email body</li>
+<li>image = the first attachment, if present</li>
+</ul><h2>How to use it</h2>
+
+<ul>
+<li>Check out</li>
+<li>Create a google appengine project for it</li>
+<li>Edit the application name in app.yaml to match your appengine project name</li>
+<li>Edit app.yaml to set the DESTINATION_URL</li>
+<li>You can test locally using the GAE development server and the admin console, using the Inbound Mail function (although doesn't allow attachments)</li>
+<li>Publish to GAE</li>
+</ul>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/jsvaughan">jsvaughan</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
