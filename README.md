@@ -1,16 +1,17 @@
 emailtohttppost
 ===============
 
-An appengine app that receives email and sends the email content via http post
+An appengine app that receives email and sends the email content via http post - incoming email for your webapp.
 
-e.g. a free alternative to http://mailnuggets.com, http://cloudmailin.com etc
+e.g. a free alternative to http://mailnuggets.com, http://cloudmailin.com etc.  Set it up on appengine, redirect addresses from your domain to appspot mail, then handle the incoming POST from appengine.
 
 What it does
 -------------------------
 Any email sent to {string}@{appid}.appspotmail.com becomes a multipart post to a url you specify, with the fields:
 
- * email = the sender's email address
- * title = the email subject lne
+ * sender = the sender's email address
+ * to = the recipient
+ * subject = the email subject lne
  * body = the email body
  * image = the first attachment, if present
 
