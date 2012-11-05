@@ -8,10 +8,16 @@ from poster.encode import MultipartParam, multipart_encode
 
 class PostToUrl(InboundMailHandler):
     def receive(self, mail_message):
-        params = [MultipartParam('email', value=mail_message.sender), MultipartParam('title', value=mail_message.subject)]
-
+        concatenated_to =  mail_message.to if isinstance(mail_message.to, basestring) else ','.join(mail_message.to)
         body =  ''.join([body.decode() for content_type, body in mail_message.bodies(content_type='text/plain')])
-        params.append(MultipartParam('body', value=body))
+
+        params = [MultipartParam('sender', value=mail_message.sender),
+                  MultipartParam('to', concatenated_to),
+                  MultipartParam('body', value=body),
+        ]
+
+        if hasattr(mail_message, 'subject'):
+            MultipartParam('subject', value=mail_message.subject),
 
         if hasattr(mail_message, 'attachments') and mail_message.attachments:
             # Only process the first
