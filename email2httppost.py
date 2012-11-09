@@ -17,7 +17,7 @@ class PostToUrl(InboundMailHandler):
         ]
 
         if hasattr(mail_message, 'subject'):
-            MultipartParam('subject', value=mail_message.subject),
+            params.append(MultipartParam('subject', value=mail_message.subject))
 
         if hasattr(mail_message, 'attachments') and mail_message.attachments:
             # Only process the first
