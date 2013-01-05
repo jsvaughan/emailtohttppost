@@ -5,25 +5,44 @@ from google.appengine.api import mail
 import os
 from poster.encode import MultipartParam, multipart_encode
 from google.appengine.ext import db
+import logging
+from google.appengine.ext import ereporter
+
+ereporter.register_logger()
 
 class Email(db.Model):
     created = db.DateTimeProperty(auto_now_add=True)
-    sender = db.StringProperty()
-    to = db.StringProperty()
+    sender = db.StringProperty(multiline=True)
+    to = db.StringProperty(multiline=True)
+    cc = db.StringProperty(multiline=True)
+    bcc = db.StringProperty(multiline=True)
     subject = db.TextProperty()
     body = db.TextProperty()
 
+
 class PostToUrl(InboundMailHandler):
+    def join_recipients_if_required(self, mail_message_field):
+        return mail_message_field if isinstance(mail_message_field, basestring) else ','.join(mail_message_field)
+
     def receive(self, mail_message):
         sender = mail_message.sender
-        to = mail_message.to if isinstance(mail_message.to, basestring) else ','.join(mail_message.to)
+        to = self.join_recipients_if_required(mail_message.to)
+        cc = self.join_recipients_if_required(mail_message.cc) if hasattr(mail_message, 'cc') else None
+        bcc = self.join_recipients_if_required(mail_message.bcc) if hasattr(mail_message, 'bcc') else None
         subject = mail_message.subject if hasattr(mail_message, 'subject') else ''
-        body =  ''.join([body.decode() for content_type, body in mail_message.bodies(content_type='text/plain')])
+        body = ''.join([body.decode() for content_type, body in mail_message.bodies(content_type='text/plain')])
 
-        if os.environ.get('COPY_DB'):
-            self.persist(sender, to, subject, body)
-        if os.environ.get('COPY_EMAIL'):
-            self.send_copy(sender, to, subject, body)
+        try:
+            if os.environ.get('COPY_DB'):
+                self.persist(sender, to, cc, bcc, subject, body)
+        except:
+            logging.exception('Error saving email.')
+
+        try:
+            if os.environ.get('COPY_EMAIL'):
+                self.send_copy(sender, to, cc, bcc, subject, body)
+        except:
+            logging.exception('Error sending email copy.')
 
         params = [MultipartParam('sender', value=sender),
                   MultipartParam('to', to),
@@ -52,18 +71,18 @@ class PostToUrl(InboundMailHandler):
         self.response.out.write('HTTP RESPONSE STATUS: %s<br />' % result.status_code)
         self.response.out.write(result.content)
 
-    def send_copy(self, original_sender, original_to, original_subject, original_body):
+    def send_copy(self, original_sender, original_to, original_cc, original_bcc, original_subject, original_body):
         to = os.environ.get('COPY_EMAIL_TO')
         sender = os.environ.get('COPY_EMAIL_FROM')
         subject = os.environ.get('COPY_EMAIL_SUBJECT')
-        body = 'Sender=%s\nTo=%s\nSubject=%s\n\n%s' % (original_sender, original_to, original_subject, original_body)
+        body = 'Sender=%s\nTo=%s\nCc=%s\nBcc=%s\nSubject=%s\n\n%s' % (original_sender, original_to, original_cc, original_bcc, original_subject, original_body)
         mail.send_mail(sender=sender,
             to=to,
             subject=subject,
             body=body)
 
-    def persist(self, sender, to, subject, body):
-        email = Email(sender=sender,to=to,subject=subject,body=body)
+    def persist(self, sender, to, cc, bcc, subject, body):
+        email = Email(sender=sender, to=to, cc=cc, bcc=bcc, subject=subject, body=body)
         email.put()
 
 

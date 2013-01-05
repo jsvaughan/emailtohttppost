@@ -19,7 +19,7 @@ env_variables:
   COPY_EMAIL: True
   COPY_EMAIL_TO: 'jsvaughan@gmail.com'
   COPY_EMAIL_FROM: 'noreply@freelywheely.com'
-  COPY_EMAIL_SUBJECT: 'FreelyWheely Email via AppEngine'
+  COPY_EMAIL_SUBJECT: 'The subject of the copy mail'
 
 
 

@@ -1,0 +1,4 @@
+cron:
+- description: Daily exception report
+  url: /_ereporter?sender={your email}
+  schedule: every day 00:00
