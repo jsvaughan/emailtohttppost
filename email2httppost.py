@@ -16,6 +16,7 @@ class Email(db.Model):
     to = db.StringProperty(multiline=True)
     cc = db.StringProperty(multiline=True)
     bcc = db.StringProperty(multiline=True)
+    message_id = db.StringProperty(multiline=True)
     subject = db.TextProperty()
     body = db.TextProperty()
 
@@ -31,16 +32,17 @@ class PostToUrl(InboundMailHandler):
         bcc = self.join_recipients_if_required(mail_message.bcc) if hasattr(mail_message, 'bcc') else None
         subject = mail_message.subject if hasattr(mail_message, 'subject') else ''
         body = ''.join([body.decode() for content_type, body in mail_message.bodies(content_type='text/plain')])
+        message_id = mail_message.original.get('message-id',None)
 
         try:
             if os.environ.get('COPY_DB'):
-                self.persist(sender, to, cc, bcc, subject, body)
+                self.persist(message_id, sender, to, cc, bcc, subject, body)
         except:
             logging.exception('Error saving email.')
 
         try:
             if os.environ.get('COPY_EMAIL'):
-                self.send_copy(sender, to, cc, bcc, subject, body)
+                self.send_copy(message_id,sender, to, cc, bcc, subject, body)
         except:
             logging.exception('Error sending email copy.')
 
@@ -49,6 +51,13 @@ class PostToUrl(InboundMailHandler):
                   MultipartParam('subject', value=subject),
                   MultipartParam('body', value=body),
         ]
+
+        if cc:
+            params.append(MultipartParam('cc', cc))
+        if bcc:
+            params.append(MultipartParam('bcc', bcc))
+        if message_id:
+            params.append(MultipartParam('message-id', message_id))
 
         if hasattr(mail_message, 'attachments') and mail_message.attachments:
             # Only process the first
@@ -71,18 +80,18 @@ class PostToUrl(InboundMailHandler):
         self.response.out.write('HTTP RESPONSE STATUS: %s<br />' % result.status_code)
         self.response.out.write(result.content)
 
-    def send_copy(self, original_sender, original_to, original_cc, original_bcc, original_subject, original_body):
+    def send_copy(self, message_id, original_sender, original_to, original_cc, original_bcc, original_subject, original_body):
         to = os.environ.get('COPY_EMAIL_TO')
         sender = os.environ.get('COPY_EMAIL_FROM')
         subject = os.environ.get('COPY_EMAIL_SUBJECT')
-        body = 'Sender=%s\nTo=%s\nCc=%s\nBcc=%s\nSubject=%s\n\n%s' % (original_sender, original_to, original_cc, original_bcc, original_subject, original_body)
+        body = 'Message Id=%s\nSender=%s\nTo=%s\nCc=%s\nBcc=%s\nSubject=%s\n\n%s' % (message_id, original_sender, original_to, original_cc, original_bcc, original_subject, original_body)
         mail.send_mail(sender=sender,
             to=to,
             subject=subject,
             body=body)
 
-    def persist(self, sender, to, cc, bcc, subject, body):
-        email = Email(sender=sender, to=to, cc=cc, bcc=bcc, subject=subject, body=body)
+    def persist(self, message_id, sender, to, cc, bcc, subject, body):
+        email = Email(message_id=message_id,sender=sender, to=to, cc=cc, bcc=bcc, subject=subject, body=body)
         email.put()
 
 
