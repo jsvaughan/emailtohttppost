@@ -37,9 +37,9 @@ class PostToUrl(InboundMailHandler):
         message_id = complete_message.get('message-id', None)
 
         subject = mail_message.subject if hasattr(mail_message, 'subject') else ''
-        body = ''.join([body.decode() for content_type, body in mail_message.bodies(content_type='text/plain')])
-        html_body = ''.join([body.decode() for content_type, body in mail_message.bodies(content_type='text/html')])
-        #logging.error(mail_message.original)
+        body = ''.join([body_part.decode() for content_type, body_part in mail_message.bodies(content_type='text/plain')])
+        html_body = ''.join([body_part.decode() for content_type, body_part in mail_message.bodies(content_type='text/html')])
+
         for item in complete_message.items():
             logging.error("%s=%s" % (item[0], item[1]))
         try:
@@ -101,7 +101,7 @@ class PostToUrl(InboundMailHandler):
             body=body)
 
     def persist(self, message_id, sender, to, cc, bcc, subject, body, html_body):
-        email = Email(message_id=message_id, sender=sender, to=to, cc=cc, bcc=bcc, subject=subject, body=body, html_body = html_body)
+        email = Email(message_id=message_id, sender=sender, to=to, cc=cc, bcc=bcc, subject=subject, body=body, html_body=html_body)
         email.put()
 
 
