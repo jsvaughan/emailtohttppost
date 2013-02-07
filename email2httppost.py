@@ -19,30 +19,38 @@ class Email(db.Model):
     message_id = db.StringProperty(multiline=True)
     subject = db.TextProperty()
     body = db.TextProperty()
-
+    html_body = db.TextProperty()
 
 class PostToUrl(InboundMailHandler):
-    def join_recipients_if_required(self, mail_message_field):
+    def recipients_as_string(self, mail_message_field):
+        if not mail_message_field:
+            return None
         return mail_message_field if isinstance(mail_message_field, basestring) else ','.join(mail_message_field)
 
     def receive(self, mail_message):
+        complete_message = mail_message.original
+
         sender = mail_message.sender
-        to = self.join_recipients_if_required(mail_message.to)
-        cc = self.join_recipients_if_required(mail_message.cc) if hasattr(mail_message, 'cc') else None
-        bcc = self.join_recipients_if_required(mail_message.bcc) if hasattr(mail_message, 'bcc') else None
+        to = self.recipients_as_string(mail_message.to) if hasattr(mail_message, 'to') else None
+        cc = self.recipients_as_string(mail_message.cc) if hasattr(mail_message, 'cc') else None
+        bcc = self.recipients_as_string(complete_message.bcc) if hasattr(complete_message, 'bcc') else None
+        message_id = complete_message.get('message-id', None)
+
         subject = mail_message.subject if hasattr(mail_message, 'subject') else ''
         body = ''.join([body.decode() for content_type, body in mail_message.bodies(content_type='text/plain')])
-        message_id = mail_message.original.get('message-id',None)
-
+        html_body = ''.join([body.decode() for content_type, body in mail_message.bodies(content_type='text/html')])
+        #logging.error(mail_message.original)
+        for item in complete_message.items():
+            logging.error("%s=%s" % (item[0], item[1]))
         try:
             if os.environ.get('COPY_DB'):
-                self.persist(message_id, sender, to, cc, bcc, subject, body)
+                self.persist(message_id, sender, to, cc, bcc, subject, body, html_body)
         except:
             logging.exception('Error saving email.')
 
         try:
             if os.environ.get('COPY_EMAIL'):
-                self.send_copy(message_id,sender, to, cc, bcc, subject, body)
+                self.send_copy(message_id, sender, to, cc, bcc, subject, body, html_body)
         except:
             logging.exception('Error sending email copy.')
 
@@ -50,6 +58,7 @@ class PostToUrl(InboundMailHandler):
                   MultipartParam('to', to),
                   MultipartParam('subject', value=subject),
                   MultipartParam('body', value=body),
+                  MultipartParam('htmlbody', value=html_body),
         ]
 
         if cc:
@@ -80,18 +89,19 @@ class PostToUrl(InboundMailHandler):
         self.response.out.write('HTTP RESPONSE STATUS: %s<br />' % result.status_code)
         self.response.out.write(result.content)
 
-    def send_copy(self, message_id, original_sender, original_to, original_cc, original_bcc, original_subject, original_body):
+    def send_copy(self, message_id, original_sender, original_to, original_cc, original_bcc, original_subject, original_body, html_body):
         to = os.environ.get('COPY_EMAIL_TO')
         sender = os.environ.get('COPY_EMAIL_FROM')
         subject = os.environ.get('COPY_EMAIL_SUBJECT')
-        body = 'Message Id=%s\nSender=%s\nTo=%s\nCc=%s\nBcc=%s\nSubject=%s\n\n%s' % (message_id, original_sender, original_to, original_cc, original_bcc, original_subject, original_body)
+        body = 'Message Id=%s\nSender=%s\nTo=%s\nCc=%s\nBcc=%s\nSubject=%s\n\n%s\n\n%s' % (
+        message_id, original_sender, original_to, original_cc, original_bcc, original_subject, original_body, html_body)
         mail.send_mail(sender=sender,
             to=to,
             subject=subject,
             body=body)
 
-    def persist(self, message_id, sender, to, cc, bcc, subject, body):
-        email = Email(message_id=message_id,sender=sender, to=to, cc=cc, bcc=bcc, subject=subject, body=body)
+    def persist(self, message_id, sender, to, cc, bcc, subject, body, html_body):
+        email = Email(message_id=message_id, sender=sender, to=to, cc=cc, bcc=bcc, subject=subject, body=body, html_body = html_body)
         email.put()
 
 
