@@ -32,6 +32,19 @@ class PostToUrl(InboundMailHandler):
             for item in complete_message.items():
                 logging.error("%s=%s" % (item[0], item[1]))
 
+    def get_body_parts(self, mail_message, mime_type):
+        body_parts = []
+        for _, payload in mail_message.bodies(mime_type):
+            # FIXME(andi): Remove this when issue 2383 is fixed.
+            # 8bit encoding results in UnknownEncodingError, see
+            # http://code.google.com/p/googleappengine/issues/detail?id=2383
+            # As a workaround we try to decode the payload ourselves.
+            if payload.encoding == '8bit' and payload.charset:
+                body_parts.append(payload.payload.decode(payload.charset))
+            else:
+                body_parts.append(payload.decode())
+        return body_parts
+
     def receive(self, mail_message):
         try:
             complete_message = mail_message.original
@@ -43,8 +56,9 @@ class PostToUrl(InboundMailHandler):
             message_id = complete_message.get('message-id', None)
 
             subject = mail_message.subject if hasattr(mail_message, 'subject') else ''
-            body = ''.join([body_part.decode() for content_type, body_part in mail_message.bodies(content_type='text/plain')])
-            html_body = ''.join([body_part.decode() for content_type, body_part in mail_message.bodies(content_type='text/html')])
+
+            body = ''.join(self.get_body_parts(mail_message, 'text/plain'))
+            html_body = ''.join(self.get_body_parts(mail_message, 'text/html'))
 
             try:
                 if os.environ.get('COPY_DB'):
